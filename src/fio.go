@@ -36,7 +36,12 @@ func checkEnvironment() bool {
             return false
         }
     }
-    return true
+    result := verifyDocker()
+    if result == true{
+        return true
+    }else{
+        return false
+    }
 }
 // check if GOPATH is set
 func verifyGoPath() bool{
@@ -67,13 +72,91 @@ func setGoPath() bool{
     return true
 }
 
+//Create FIO Docker container
+func createBenchmarkContainer() bool {
+    fmt.Println("Creating Docker Container for benchmarking...")
+    cmd :=
+    "docker run --cap-add=SYS_ADMIN -it --device=/dev/nvme0n1:/dev/xvda:rw saurabhd04/docker_fio"
+    // -------------------------- DO SOMETHING WITH ERR --------------------
+    _, err :=
+        exec.Command("bash", "-c", cmd).CombinedOutput()
+    if err != nil {
+        os.Stderr.WriteString(err.Error())
+        return false
+    }
+    return true
+}
+
+//Verify if Docker is installed and running
+func verifyDocker() bool{
+    fmt.Println("Verifying Docker environment...")
+    output, err :=
+     exec.Command("bash", "-c", "rpm -qa | grep docker").CombinedOutput()
+    if err != nil {
+        fmt.Println("Inside error...")
+        os.Stderr.WriteString(err.Error())
+        return false
+    }
+    //fmt.Println(string(output))
+    //return true
+
+    if string(output[:]) == ""{
+        fmt.Println("Is Docker installed? Please check and install Docker...")
+        return false
+    }else{
+        // check if docker is running
+        fmt.Println("Inside checking output slice")
+        output, err =
+            exec.Command("bash", "-c", "ps -ef | grep \"[d]ockerd\"").CombinedOutput()
+        if err != nil {
+            os.Stderr.WriteString(err.Error())
+            return false
+        }
+        fmt.Println("Above dockerd check")
+
+        if string(output[:]) == ""{
+            fmt.Println("Dockerd is not running... Exiting!")
+            return false
+        }
+        // Check if saurabhd04/docker_fio container is running
+        fmt.Println("check docker_fio")
+
+        output, err =
+            exec.Command("bash", "-c", "docker ps | grep docker_fio").CombinedOutput()
+            //s :=  string(output[:])
+            //fmt.Println("This is %s",string(err.Error()))
+        /*
+        if err != nil {
+            fmt.Println("Here?")
+            os.Stderr.WriteString(err.Error())
+            fmt.Println("Gela?")
+
+            return false
+        }*/
+
+        fmt.Println("running?")
+
+        if string(output[:]) == ""{
+            fmt.Println("Docker container containing FIO not running...")
+            res := createBenchmarkContainer()
+            if res == true{
+                fmt.Println("Docker container created...")
+                return true
+            }else{
+                return false
+            }
+        }
+
+    }
+    return true
+}
 
 func main(){
+
     res := checkEnvironment()
     if res == false{
         fmt.Println("Could not set GOPATH. Please set it manually.")
         os.Exit(1)
-    }else{
-        fmt.Println("GOPATH already set up...")
     }
+
 }
