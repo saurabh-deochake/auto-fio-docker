@@ -30,18 +30,13 @@ import (
 //verify environment variable
 func checkEnvironment() bool {
     res := verifyGoPath()
-    if res == true {
-        output, err := exec.Command("fio").CombinedOutput()
-        if err != nil {
-            os.Stderr.WriteString(err.Error())
-        }
-        fmt.Println(string(output))
-    }else{
+    if res == false {
         res := setGoPath()
         if res == false{
             return false
         }
     }
+    return true
 }
 // check if GOPATH is set
 func verifyGoPath() bool{
@@ -77,7 +72,7 @@ func main(){
     res := checkEnvironment()
     if res == false{
         fmt.Println("Could not set GOPATH. Please set it manually.")
-        os.exit(1)
+        os.Exit(1)
     }else{
         fmt.Println("GOPATH already set up...")
     }
